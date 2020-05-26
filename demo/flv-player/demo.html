@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>demo</title>
+  </head>
+  <style>
+    .control{
+      position: fixed;
+    }
+  </style>
+  <body>
+    <div class="control">
+        <label>Stream URL</label><input type="text" id="stream" style="width: 300px;" value="https://mister-ben.github.io/videojs-flvjs/bbb.flv">
+        <label>App Id</label><input type="text" id="appId" style="width: 300px;" value="">
+        <label>Device Id</label><input type="text" id="deviceId" style="width: 300px;" value="">
+        <label>Refresh Times(s) <input type="number" id="autoRefreshInput" /></label>
+        <button onclick="Demo.initPlayer()">open</button>
+        <button onclick="Demo.start()">start</button>
+        <button onclick="Demo.pause()">pause</button>
+        <button onclick="Demo.destoryPlayer()">close</button>
+        <button onclick="Demo.getCurrentTime()">currentTime</button>
+        <button onclick="Demo.shotImage()">shot</button>
+        <button onclick="Demo.refresh()">refresh</button>
+    </div>
+    
+  </body>
+  <script>
+    const INIT = 'init',
+          START = 'start', 
+          PAUSE = 'pause', 
+          DESTORY = 'destory',
+          CURRENTTIME = 'currentTime',
+          SHOTIMAGE = 'shotImage';
+    var Demo = {
+        initPlayer: function() {
+          var stream = document.getElementById('stream').value || 'https://mister-ben.github.io/videojs-flvjs/bbb.flv';
+          var appId = document.getElementById('appId').value || '';
+          var deviceId = document.getElementById('deviceId').value || '';
+          var iframe = document.createElement('iframe');
+          iframe.id = 'player';
+          iframe.name = 'player';
+          iframe.src = './player/player.html?stream='+stream+'&appId='+appId+'&deviceId='+deviceId;
+          iframe.width = 800;
+          iframe.height = 600;
+          iframe.frameborder = 0;
+          iframe.scrolling = 'no';
+          iframe.style = 'margin:50px 10px;border: none'
+          document.body.appendChild(iframe);
+        },
+        start: function() {
+          var player = document.getElementById('player');
+          player.contentWindow.postMessage({action: START}, "*");
+        },
+        pause: function() {
+          var player = document.getElementById('player');
+          player.contentWindow.postMessage({action: PAUSE}, "*");
+        },
+        destoryPlayer: function() {
+          var player = document.getElementById('player');
+          player.contentWindow.postMessage({action: DESTORY}, "*");
+          //把iframe指向空白页面，这样可以释放大部分内存 
+          player.src = 'about:blank'; 
+          try{ 
+            player.contentWindow.document.write(''); 
+            player.contentWindow.document.clear(); 
+          }catch(e){} 
+          player.parentNode.removeChild(player);
+        },
+        getCurrentTime() {
+          var player = document.getElementById('player');
+          player.contentWindow.postMessage({action: CURRENTTIME}, "*");
+        },
+        shotImage() {
+          var player = document.getElementById('player');
+          player.contentWindow.postMessage({action: SHOTIMAGE}, "*");
+        },
+        refresh() {
+          var iframes = document.getElementsByTagName('iframe');
+          if(!iframes.length) return;
+          for(var i=0;i<iframes.length;i++){
+            iframes[i].contentWindow.postMessage({action: INIT}, "*");
+          }
+        },
+        setAutoRefresh(event) {
+          var interval, value = event.target.value;
+          clearInterval(interval);
+          if(value){
+            interval = setInterval(this.refresh, value*1000);
+          }
+        }
+    }
+    window.addEventListener('message', function(event){
+      console.log(event.data);
+    });
+    document.getElementById('autoRefreshInput').oninput = debounce(Demo.setAutoRefresh.bind(Demo), 1000);
+    function debounce (fn, delay) {
+      let timer = null
+      return function () {
+        let context = this;
+        let arg = arguments;
+        timer && clearTimeout(timer);
+        timer = setTimeout(function () {
+          fn.apply(context, arg)
+        }, delay);
+      }
+    }
+</script>
+</html>
